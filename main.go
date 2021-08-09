@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"log"
-	mongoCl "webApp/database/client"
+	"webApp/database/mongo_client"
+	"webApp/router"
+	"webApp/routes"
 
 	"github.com/joho/godotenv"
 )
@@ -14,7 +16,7 @@ func init() {
 
 func main() {
 	// Connect to database
-	m_cl, err := mongoCl.NewClient()
+	m_cl, err := mongo_client.NewClient()
 	if err != nil {
 		log.Fatalln("Error connecting to mongo database:", err)
 	}
@@ -24,4 +26,10 @@ func main() {
 			panic(err)
 		}
 	}()
+
+	r := router.NewRouter()
+	if err = routes.AppendRoutes(r, m_cl); err != nil {
+		log.Fatalln("Error appending routes:", err)
+	}
+
 }

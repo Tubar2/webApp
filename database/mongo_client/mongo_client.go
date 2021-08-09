@@ -1,4 +1,4 @@
-package client
+package mongo_client
 
 import (
 	"context"
