@@ -4,6 +4,9 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"time"
 	redisauth "webApp/auth/redisAuth"
 	"webApp/database/mongo_client"
 	"webApp/router"
@@ -35,14 +38,38 @@ func main() {
 		log.Fatal("Error connecting to redis:", err)
 	}
 
-	// Ceate a new server router and add routes
+	// Ceate a new router and add routes
 	r := router.NewRouter()
 	if err = routes.AppendRoutes(r, m_cl, r_cl); err != nil {
 		log.Fatalln("Error appending routes:", err)
 	}
 
-	log.Println("Starting server")
+	// Create server
+	srv := &http.Server{
+		Addr:         "localhost:8080",
+		WriteTimeout: time.Second * 15,
+		ReadTimeout:  time.Second * 15,
+		IdleTimeout:  time.Second * 60,
+		Handler:      r,
+	}
 
-	// Start Server
-	log.Fatal(http.ListenAndServe(":8080", r))
+	// Start Server on new routine
+	go func() {
+		log.Println("Starting server")
+		if err := srv.ListenAndServe(); err != nil {
+			log.Println(err)
+		}
+	}()
+
+	// Graceful Shutdown
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+
+	<-c
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	log.Println("Shutting down")
+	srv.Shutdown(ctx)
 }
