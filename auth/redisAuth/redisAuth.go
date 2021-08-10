@@ -51,4 +51,12 @@ func StartUserSession(u *model.User, redisCl *redis.Client) (string, error) {
 	return sID, nil
 }
 
+func ValidSession(key string, redisCl *redis.Client) (int64, error) {
+	log.Println("Validating session:", key)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
 
+	res := redisCl.Exists(ctx, key)
+
+	return res.Result()
+}
