@@ -24,7 +24,6 @@ func AppendRoutes(r *router.Router, m_cl *mongo.Client, r_cl *redis.Client) erro
 	// USER_API
 	uc := usercontroller.New(m_cl)
 	authM := authmiddleware.New(r_cl)
-	// r.GET("/user/{_id}", uc.GetUser)
 	r.GET("/user/{_id}", authM.AuthUser(uc.GetUser))
 	r.GET("/users", uc.GetUsers)
 	r.PUT("/user/{_id}", authM.AuthUser(uc.UpdateUser))
