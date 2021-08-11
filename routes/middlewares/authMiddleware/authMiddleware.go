@@ -20,9 +20,9 @@ func New(rc *redis.Client) *authMiddleware {
 }
 
 func (am *authMiddleware) AuthUser(next http.HandlerFunc) func(http.ResponseWriter, *http.Request) {
-	log.Println("Auth middleware called")
-
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		log.Println("Auth middleware called")
+
 		cookie, err := req.Cookie(os.Getenv("COOKIE_SID"))
 		if err == http.ErrNoCookie {
 			log.Println("No Cookie")
@@ -42,6 +42,7 @@ func (am *authMiddleware) AuthUser(next http.HandlerFunc) func(http.ResponseWrit
 
 		} else {
 			res.Write([]byte("Invalid session"))
+			http.Redirect(res, req, "/login", http.StatusBadRequest)
 			log.Println("Invalid user session")
 			return
 		}

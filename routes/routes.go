@@ -4,7 +4,9 @@ import (
 	"webApp/router"
 	"webApp/routes/controllers"
 	sessioncontroller "webApp/routes/controllers/sessionController"
+	tweetcontroller "webApp/routes/controllers/tweetController"
 	usercontroller "webApp/routes/controllers/userController"
+	authmiddleware "webApp/routes/middlewares/authMiddleware"
 
 	"github.com/go-redis/redis/v8"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -21,10 +23,16 @@ func AppendRoutes(r *router.Router, m_cl *mongo.Client, r_cl *redis.Client) erro
 
 	// USER_API
 	uc := usercontroller.New(m_cl)
-	r.GET("/user/{_id}", uc.GetUser)
+	authM := authmiddleware.New(r_cl)
+	// r.GET("/user/{_id}", uc.GetUser)
+	r.GET("/user/{_id}", authM.AuthUser(uc.GetUser))
 	r.GET("/users", uc.GetUsers)
-	r.PUT("/user/{_id}", uc.UpdateUser)
-	r.DELETE("/user/{_id}", uc.DeleteUser)
+	r.PUT("/user/{_id}", authM.AuthUser(uc.UpdateUser))
+	r.DELETE("/user/{_id}", authM.AuthUser(uc.DeleteUser))
+
+	tc := tweetcontroller.New(m_cl, r_cl)
+	r.POST("/tweet", authM.AuthUser(tc.NewTweet))
+	r.GET("/tweets", authM.AuthUser(tc.GetTweets))
 
 	return nil
 }
