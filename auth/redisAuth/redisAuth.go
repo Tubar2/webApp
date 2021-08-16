@@ -46,7 +46,6 @@ func StartUserSession(u *model.User, redisCl *redis.Client) (string, error) {
 		log.Println("Error starting session. id:", sID, "status:", status)
 		return "", status.Err()
 	}
-	log.Println()
 
 	return sID, nil
 }
@@ -59,4 +58,15 @@ func ValidSession(key string, redisCl *redis.Client) (int64, error) {
 	res := redisCl.Exists(ctx, key)
 
 	return res.Result()
+}
+
+func GetUserFromSession(sID string, redisCl *redis.Client) (model.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cmd := redisCl.HGetAll(ctx, sID)
+	var user model.User
+	err := cmd.Scan(&user)
+
+	return user, err
 }

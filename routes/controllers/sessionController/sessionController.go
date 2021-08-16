@@ -1,15 +1,14 @@
 package sessioncontroller
 
 import (
+	"html/template"
 	"log"
 	"net/http"
 	"os"
 	"webApp/auth"
-	"webApp/database/model"
 
 	"github.com/go-redis/redis/v8"
 	"go.mongodb.org/mongo-driver/mongo"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type sessionController struct {
@@ -22,36 +21,6 @@ func New(cl *mongo.Client, rc *redis.Client) *sessionController {
 		userCollection: cl.Database("mydb").Collection("users"),
 		redisClient:    rc,
 	}
-}
-
-func (rc *sessionController) Register(res http.ResponseWriter, req *http.Request) {
-	log.Println("Register handler called")
-
-	req.ParseMultipartForm(0)
-
-	name := req.FormValue("name")
-	uname := req.FormValue("username")
-	email := req.FormValue("email")
-	pw, err := bcrypt.GenerateFromPassword([]byte(req.FormValue("password")), bcrypt.DefaultCost)
-	if err != nil {
-		panic(err)
-	}
-
-	u := model.NewUser(name, uname, email, string(pw))
-
-	sID, err := auth.SignUp(u, rc.userCollection, rc.redisClient)
-	if err != nil {
-		log.Println("Error during sign-up:", err)
-		http.Error(res, "Error signing up", http.StatusInternalServerError)
-		return
-	}
-
-	c := &http.Cookie{
-		Name:  os.Getenv("COOKIE_SID"),
-		Value: sID,
-	}
-	http.SetCookie(res, c)
-
 }
 
 func (rc *sessionController) Logout(res http.ResponseWriter, req *http.Request) {
@@ -83,6 +52,7 @@ func (rc *sessionController) Logout(res http.ResponseWriter, req *http.Request) 
 	}
 	http.SetCookie(res, cookie)
 
+	http.Redirect(res, req, "/", http.StatusSeeOther)
 	res.Write([]byte("Logged out!\n"))
 }
 
@@ -105,4 +75,24 @@ func (rc *sessionController) Login(res http.ResponseWriter, req *http.Request) {
 		Value: sID,
 	}
 	http.SetCookie(res, c)
+	http.Redirect(res, req, "/", http.StatusSeeOther)
+}
+func (rc *sessionController) LoginPage(res http.ResponseWriter, req *http.Request) {
+	tpl, err := template.ParseGlob("templates/html/*.html")
+	if err != nil {
+		log.Fatalln(err)
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	tpl.ExecuteTemplate(res, "login.html", nil)
+}
+
+func (rc *sessionController) RegisterPage(res http.ResponseWriter, req *http.Request) {
+	tpl, err := template.ParseGlob("templates/html/*.html")
+	if err != nil {
+		log.Fatalln(err)
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	tpl.ExecuteTemplate(res, "register.html", nil)
 }

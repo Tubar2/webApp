@@ -16,8 +16,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func SignUp(u *model.User, col *mongo.Collection, redisCl *redis.Client) (string, error) {
-	log.Println("Signing up user:", u)
+// Will try to create new user in database
+// SignUp will validate if username is taken
+// and returns nil on correct creation
+func SignUp(u *model.User, col *mongo.Collection) error {
+	log.Println("Trying to sign up user:", u)
 	done := make(chan bool)
 	var err error
 
@@ -49,11 +52,11 @@ func SignUp(u *model.User, col *mongo.Collection, redisCl *redis.Client) (string
 	log.Println("Waiting response")
 	if channels.OK(done) {
 		log.Println("Good response")
-		return redisauth.StartUserSession(u, redisCl)
+		return nil
 	}
 	log.Println("Bad response")
 
-	return "", err
+	return err
 }
 
 func Logout(redisCl *redis.Client, key string) (int64, error) {

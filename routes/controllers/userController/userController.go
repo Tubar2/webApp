@@ -8,12 +8,14 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"webApp/auth"
 	"webApp/database/model"
 
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type userController struct {
@@ -53,7 +55,7 @@ func (uc *userController) GetUser(res http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(res).Encode(result)
 }
 
-func (uc *userController) GetUsers(res http.ResponseWriter, rew *http.Request) {
+func (uc *userController) GetUsers(res http.ResponseWriter, _ *http.Request) {
 	log.Println("GetUsers handler called")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -81,6 +83,37 @@ func (uc *userController) GetUsers(res http.ResponseWriter, rew *http.Request) {
 	}
 	res.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(res).Encode(users)
+}
+
+func (uc *userController) CreateUser(res http.ResponseWriter, req *http.Request) {
+	log.Println("Register handler called")
+
+	req.ParseMultipartForm(0)
+
+	name := req.FormValue("name")
+	uname := req.FormValue("username")
+	email := req.FormValue("email")
+	pw, err := bcrypt.GenerateFromPassword([]byte(req.FormValue("password")), bcrypt.DefaultCost)
+	if err != nil {
+		panic(err)
+	}
+
+	u := model.NewUser(name, uname, email, string(pw))
+
+	err = auth.SignUp(u, uc.userCollection)
+	if err != nil {
+		log.Println("Error during sign-up:", err)
+		http.Error(res, "Error signing up", http.StatusPermanentRedirect)
+		return
+	}
+
+	// c := &http.Cookie{
+	// 	Name:  os.Getenv("COOKIE_SID"),
+	// 	Value: sID,
+	// }
+	// http.SetCookie(res, c)
+	// Redirects user to login page
+	http.Redirect(res, req, "/login", http.StatusTemporaryRedirect)
 }
 
 func (uc *userController) UpdateUser(res http.ResponseWriter, req *http.Request) {

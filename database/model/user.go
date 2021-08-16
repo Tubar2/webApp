@@ -6,12 +6,12 @@ import (
 )
 
 type User struct {
-	MongoID  primitive.ObjectID `json:"_id"      bson:"_id,omitempty"`
-	ID       string             `json:"-"        bson:"id,omitempty"`
-	Name     string             `json:"name"     bson:"name,omitempty"`
-	Username string             `json:"username" bson:"username,omitempty"`
-	Email    string             `json:"email"    bson:"email,omitempty"`
-	Password string             `json:"-"        bson:"password,omitempty"`
+	MongoID  primitive.ObjectID `json:"_id"      bson:"_id,omitempty"      redis:"-"`
+	ID       string             `json:"-"        bson:"id,omitempty"       redis:"id"`
+	Name     string             `json:"name"     bson:"name,omitempty"     redis:"name"`
+	Username string             `json:"username" bson:"username,omitempty" redis:"username"`
+	Email    string             `json:"email"    bson:"email,omitempty"    redis:"-"`
+	Password string             `json:"-"        bson:"password,omitempty" redis:"-"`
 }
 
 func NewUser(name, username, email, password string) *User {

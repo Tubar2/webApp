@@ -1,0 +1,13 @@
+{{template "Header"}}
+
+<h1>Hello, {{.Name}}!</h1>
+<form action="/tweet" method="post">
+    <label for="tweet">Type your Tweet:</label><br>
+    <input type="text" id="tweet" name="tweet"><br>
+</form>
+
+<form action="/logout" method="post">
+    <button>Logout</button>
+</form>
+
+{{template "Footer"}}
